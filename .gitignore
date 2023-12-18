@@ -1,0 +1,66 @@
+# Compiled binary and object files
+*.o
+*.a
+*.so
+*.exe
+*.test
+*.out
+*.dll
+*.bin
+*.zip
+*.tar.gz
+*.rar
+
+# Folders that may contain compiled files
+bin/
+obj/
+dist/
+build/
+release/
+
+# Dependency directories (remove these lines if you're using Go modules)
+vendor/
+Godeps/
+*_workspace/
+
+# IDE and editor folders/files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+*.DS_Store
+
+# Test files
+*.test
+*.test.result
+
+# Coverage files
+*.cover
+coverage.txt
+
+# Log files
+*.log
+
+# Environment files
+.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Generated files by Swagger
+docs/
+
+# Generated files by GoLand
+.idea/
+
+# Operating System generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
