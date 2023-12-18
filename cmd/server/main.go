@@ -2,11 +2,14 @@ package main
 
 import (
 	"GolandRestApi/pkg/api/handlers"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 func main() {
+	fmt.Println("Hello, World!")
+	
 	r := mux.NewRouter()
 
 	// Define routes here
