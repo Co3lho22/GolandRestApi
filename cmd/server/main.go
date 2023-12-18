@@ -15,6 +15,14 @@ func main() {
 	cfg := config.NewConfig()
 	serverPort := cfg.ServerPort
 
+	logger, errLog := service.NewLogger(cfg)
+
+	if errLog != nil {
+		log.Fatalf("Could not initialize logger: %v", errLog)
+	}
+
+	logger.Info("Application started")
+
 	fmt.Printf("Http server started on port %d\n", serverPort)
 
 	r := mux.NewRouter()

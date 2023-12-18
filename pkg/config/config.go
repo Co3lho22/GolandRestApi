@@ -5,6 +5,7 @@ type Config struct {
 	ServerPort int
 	APIKey     string
 	HashKey    string
+	LogDir     string
 
 	// DB Config
 	DBHost     string

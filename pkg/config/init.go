@@ -16,6 +16,7 @@ func NewConfig() *Config {
 		ServerPort: serverPort,
 		APIKey:     os.Getenv("API_KEY"),
 		HashKey:    os.Getenv("HASH_KEY"),
+		LogDir:     os.Getenv("LOG_DIR"),
 
 		// DB Config
 		DBHost:     os.Getenv("DB_HOST"),
