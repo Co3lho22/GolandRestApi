@@ -1,1 +1,15 @@
 package config
+
+type Config struct {
+	//Server Config
+	ServerPort int
+	APIKey     string
+	HashKey    string
+
+	// DB Config
+	DBHost     string
+	DBPort     int
+	DBUser     string
+	DBPassword string
+	DBName     string
+}
