@@ -4,9 +4,7 @@ import (
 	"GolandRestApi/pkg/api/handlers"
 	"GolandRestApi/pkg/config"
 	"GolandRestApi/pkg/service"
-	"fmt"
 	"github.com/gorilla/mux"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -18,12 +16,8 @@ func main() {
 	logger, errLog := service.NewLogger(cfg)
 
 	if errLog != nil {
-		log.Fatalf("Could not initialize logger: %v", errLog)
+		logger.Fatal("Could not initialize logger: ", errLog)
 	}
-
-	logger.Info("Application started")
-
-	fmt.Printf("Http server started on port %d\n", serverPort)
 
 	r := mux.NewRouter()
 
@@ -33,13 +27,15 @@ func main() {
 
 	db, errDB := service.NewDBConnection(cfg)
 	if errDB != nil {
-		log.Fatalf("Could not connect to the database: %v", errDB)
+		logger.Fatal("Could not connect to the database: ", errDB)
 	}
 	defer db.Close()
 
-	err := http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
+	errHttp := http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
+	if errHttp != nil {
+		logger.Fatal("Error starting server: ", errHttp)
 		return
 	}
+
+	logger.Info("Http server started on port ", serverPort, ".\n")
 }
