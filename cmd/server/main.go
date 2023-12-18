@@ -21,6 +21,8 @@ func main() {
 
 	r := mux.NewRouter()
 
+	logger.Info("Http server started on port ", serverPort, ".\n")
+	
 	// Define routes here
 	r.HandleFunc("/login", handlers.LoginUser)
 	r.HandleFunc("/register", handlers.RegisterUser)
@@ -36,6 +38,4 @@ func main() {
 		logger.Fatal("Error starting server: ", errHttp)
 		return
 	}
-
-	logger.Info("Http server started on port ", serverPort, ".\n")
 }
