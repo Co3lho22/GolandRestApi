@@ -3,8 +3,10 @@ package main
 import (
 	"GolandRestApi/pkg/api/handlers"
 	"GolandRestApi/pkg/config"
+	"GolandRestApi/pkg/service"
 	"fmt"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -20,6 +22,12 @@ func main() {
 	// Define routes here
 	r.HandleFunc("/login", handlers.LoginUser)
 	r.HandleFunc("/register", handlers.RegisterUser)
+
+	db, errDB := service.NewDBConnection(cfg)
+	if errDB != nil {
+		log.Fatalf("Could not connect to the database: %v", errDB)
+	}
+	defer db.Close()
 
 	err := http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
 	if err != nil {
