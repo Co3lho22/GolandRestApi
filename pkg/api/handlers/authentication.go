@@ -45,18 +45,21 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 		return
 	}
 
-	if success {
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("User successfully created"))
-		if err != nil {
-			logger.WithError(err).Error("Error writing the response")
-			http.Error(w, "Error writing the response", http.StatusInternalServerError)
-			return
-		}
-	} else {
+	if !success {
 		http.Error(w, "Error while registering user", http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte("User successfully created"))
+	if err != nil {
+		logger.WithError(err).Error("Error writing the response")
+		http.Error(w, "Error writing the response", http.StatusInternalServerError)
+		return
+	}
+
+	logger.WithField("username", newUser.Username).Info("User registered with success")
+	return
 }
 
 func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
@@ -106,5 +109,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http
 		return
 	}
 
+	logger.WithField("username", loginDetails.Username).Info("User logged in with success")
 	return
 }
