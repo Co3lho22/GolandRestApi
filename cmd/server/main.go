@@ -55,6 +55,9 @@ func main() {
 	r.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		handlers.RegisterUser(logger, db, w, r)
 	})
+	r.HandleFunc("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
+		handlers.RefreshToken(logger, db, w, r)
+	})
 
 	err = http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
 	if err != nil {
