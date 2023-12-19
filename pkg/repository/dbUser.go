@@ -18,6 +18,7 @@ func UserExists(logger *logrus.Logger, db *sql.DB, username string, email string
 
 		return false, err
 	}
+
 	return count >= 1, nil
 }
 
@@ -30,6 +31,7 @@ func AddUser(logger *logrus.Logger, db *sql.DB, user model.User) (bool, error) {
 		}).WithError(err).Error("Error adding user")
 		return false, err
 	}
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		logger.WithFields(logrus.Fields{
@@ -37,6 +39,7 @@ func AddUser(logger *logrus.Logger, db *sql.DB, user model.User) (bool, error) {
 		}).WithError(err).Error("Error getting rows affected")
 		return false, err
 	}
+
 	return rowsAffected > 0, nil
 }
 

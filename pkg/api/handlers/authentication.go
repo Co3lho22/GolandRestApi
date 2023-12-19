@@ -20,11 +20,10 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 		return
 	}
 
-	//TODO: verify if a user with the same user name or email exists if yes respond to the client
 	userExists, err := repository.UserExists(logger, db, newUser.Username, newUser.Email)
 	if err != nil {
-		logger.Errorf("Verifying if user exists")
-		http.Error(w, "Verifying if user exists", http.StatusInternalServerError)
+		logger.WithError(err).Error("Error verifying if user exists")
+		http.Error(w, "Error while verifying if user exists", http.StatusInternalServerError)
 		return
 	} else if userExists == true {
 		http.Error(w, "Username or Email already in use", http.StatusMethodNotAllowed)
@@ -33,21 +32,24 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 	hashedPassword, err := service.HashPassword(logger, newUser)
 	if err != nil {
-		logger.Errorf("Error hashing password")
+		logger.WithError(err).Error("Error adding user")
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
-	newUser.HashedPassword = hashedPassword
 
-	//TODO: Register user in the DB
+	newUser.HashedPassword = hashedPassword
 	success, err := repository.AddUser(logger, db, newUser)
 	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		logger.WithError(err).Error("Error adding user")
+		http.Error(w, "Error adding user", http.StatusInternalServerError)
 		return
 	}
+
 	if success {
+		w.WriteHeader(http.StatusOK)
 		_, err := w.Write([]byte("User successfully created"))
 		if err != nil {
+			logger.WithError(err).Error("Error writing the response")
 			http.Error(w, "Error writing the response", http.StatusInternalServerError)
 			return
 		}
@@ -55,7 +57,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 		http.Error(w, "Error while registering user", http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
@@ -86,8 +87,8 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
-	newUser.Username = loginDetails.Username
 
+	newUser.Username = loginDetails.Username
 	if err := service.CheckPasswordHash(logger, newUser, loginDetails.Password); err != nil {
 		logger.
 			WithField("username", loginDetails.Username).
@@ -96,4 +97,14 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http
 		return
 	}
 
+	responseMessage := "User successfully logged in"
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte(responseMessage))
+	if err != nil {
+		logger.WithError(err).Error("Error writing the response")
+		http.Error(w, "Error writing the response", http.StatusInternalServerError)
+		return
+	}
+
+	return
 }
