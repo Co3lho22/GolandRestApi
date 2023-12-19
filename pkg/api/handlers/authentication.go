@@ -15,8 +15,8 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 	var newUser model.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		logger.Errorf("Was not able to deserialize the User object for the /register endpoint")
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		logger.WithError(err).Error("Failed to deserialize the User object for the /register endpoint")
+		http.Error(w, "Invalid request format", http.StatusBadRequest)
 		return
 	}
 

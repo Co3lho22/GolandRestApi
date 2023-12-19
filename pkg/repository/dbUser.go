@@ -9,7 +9,7 @@ import (
 
 func UserExists(logger *logrus.Logger, db *sql.DB, username string, email string) (bool, error) {
 	var count int
-	query := `SELECT COUNT(*) FROM USERS WHERE username = ? OR email = ?)`
+	query := `SELECT COUNT(*) FROM USERS WHERE username = ? OR email = ?`
 	err := db.QueryRow(query, username, email).Scan(&count)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
