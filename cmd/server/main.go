@@ -4,12 +4,21 @@ import (
 	"GolandRestApi/pkg/api/handlers"
 	"GolandRestApi/pkg/config"
 	"GolandRestApi/pkg/service"
+	"database/sql"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strconv"
 )
 
+// main is the entry point of the GoLandRestApi application. It initializes and configures the HTTP server,
+// sets up database connection, and defines the API routes for login and user registration.
+//
+// The main function uses the gorilla/mux router for handling HTTP requests.
+// It also initializes a logger and database connection based on the provided configuration.
+// The server listens on the specified port and handles incoming HTTP requests.
+//
+// It logs initialization errors and server start status.
 func main() {
 	cfg := config.NewConfig()
 	serverPort := cfg.ServerPort
@@ -30,9 +39,14 @@ func main() {
 
 	db, err := service.NewDBConnection(logger, cfg)
 	if err != nil {
-		logger.Fatal("Could not connect to the database: ", err)
+		logger.WithError(err).Warn("Could not connect to the database")
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			logger.WithError(err).Fatal("Could not close db")
+		}
+	}(db)
 
 	// Define routes here
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
