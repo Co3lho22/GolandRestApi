@@ -22,6 +22,7 @@ func main() {
 		} else {
 			log.Fatalf("Could not initialize logger: %v", err)
 		}
+	}
 
 	r := mux.NewRouter()
 
