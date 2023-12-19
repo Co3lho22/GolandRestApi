@@ -6,6 +6,7 @@ import (
 	"GolandRestApi/pkg/service"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -57,9 +58,42 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 }
 
-func LoginUser(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte("This is the login endpoint"))
+func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
+
+	var loginDetails struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&loginDetails)
 	if err != nil {
+		logger.WithError(err).Error("Failed to deserialize the User object for the /login endpoint")
+		http.Error(w, "Invalid request format", http.StatusBadRequest)
 		return
 	}
+
+	var newUser *model.User
+	newUser, err = repository.GetUserByUserName(logger, db, loginDetails.Username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			return
+		}
+
+		logger.WithError(err).
+			WithField("username", loginDetails.Username).
+			Error("Error retrieving user from DB")
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		return
+	}
+	newUser.Username = loginDetails.Username
+
+	if err := service.CheckPasswordHash(logger, newUser, loginDetails.Password); err != nil {
+		logger.
+			WithField("username", loginDetails.Username).
+			Warn("Invalid password")
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		return
+	}
+
 }

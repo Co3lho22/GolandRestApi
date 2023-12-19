@@ -30,7 +30,9 @@ func main() {
 	defer db.Close()
 
 	// Define routes here
-	r.HandleFunc("/login", handlers.LoginUser)
+	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		handlers.LoginUser(logger, db, w, r)
+	})
 	r.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		handlers.RegisterUser(logger, db, w, r)
 	})
