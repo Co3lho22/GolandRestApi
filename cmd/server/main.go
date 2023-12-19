@@ -5,6 +5,7 @@ import (
 	"GolandRestApi/pkg/config"
 	"GolandRestApi/pkg/service"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -16,8 +17,11 @@ func main() {
 	logger, err := service.NewLogger(cfg)
 
 	if err != nil {
-		logger.Fatal("Could not initialize logger: ", err)
-	}
+		if logger != nil {
+			logger.WithError(err).Fatal("Could not initialize logger")
+		} else {
+			log.Fatalf("Could not initialize logger: %v", err)
+		}
 
 	r := mux.NewRouter()
 
