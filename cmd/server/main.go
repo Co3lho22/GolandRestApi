@@ -13,29 +13,31 @@ func main() {
 	cfg := config.NewConfig()
 	serverPort := cfg.ServerPort
 
-	logger, errLog := service.NewLogger(cfg)
+	logger, err := service.NewLogger(cfg)
 
-	if errLog != nil {
-		logger.Fatal("Could not initialize logger: ", errLog)
+	if err != nil {
+		logger.Fatal("Could not initialize logger: ", err)
 	}
 
 	r := mux.NewRouter()
 
-	logger.Info("Http server started on port ", serverPort, ".\n")
-	
-	// Define routes here
-	r.HandleFunc("/login", handlers.LoginUser)
-	r.HandleFunc("/register", handlers.RegisterUser)
+	logger.Info("Http server started on port ", serverPort, ".")
 
-	db, errDB := service.NewDBConnection(cfg)
-	if errDB != nil {
-		logger.Fatal("Could not connect to the database: ", errDB)
+	db, err := service.NewDBConnection(logger, cfg)
+	if err != nil {
+		logger.Fatal("Could not connect to the database: ", err)
 	}
 	defer db.Close()
 
-	errHttp := http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
-	if errHttp != nil {
-		logger.Fatal("Error starting server: ", errHttp)
+	// Define routes here
+	r.HandleFunc("/login", handlers.LoginUser)
+	r.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		handlers.RegisterUser(logger, db, w, r)
+	})
+
+	err = http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
+	if err != nil {
+		logger.Fatal("Error starting server: ", err)
 		return
 	}
 }

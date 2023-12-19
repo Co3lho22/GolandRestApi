@@ -1,3 +1,5 @@
 package repository
 
-// Here I will define the dao files
+// TODO: Add validation for newUser data
+
+// TODO: Add validation for user login

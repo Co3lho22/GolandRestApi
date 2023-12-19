@@ -5,6 +5,7 @@ import "time"
 type User struct {
 	ID             int       `json:"id"`
 	Username       string    `json:"username"`
+	Password       string    `json:"password"`        // The '-' tag means this field won't be included in JSON
 	HashedPassword string    `json:"-"`               // The '-' tag means this field won't be included in JSON
 	Email          string    `json:"email,omitempty"` // omitempty will omit the field if it's empty
 	Country        string    `json:"country,omitempty"`
@@ -13,9 +14,10 @@ type User struct {
 }
 
 // NewUser is a constructor for User struct
-func NewUser(username, hashedPassword, email, country, phone string) *User {
+func NewUser(username, password, hashedPassword, email, country, phone string) *User {
 	return &User{
 		Username:       username,
+		Password:       password,
 		HashedPassword: hashedPassword,
 		Email:          email,
 		Country:        country,
