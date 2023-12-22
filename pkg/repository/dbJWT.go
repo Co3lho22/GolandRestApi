@@ -43,7 +43,7 @@ func RetrieveRefreshTokenFromDB(logger *logrus.Logger, db *sql.DB, userId int) (
 // Returns a boolean indicating whether the operation was successful and an error, if any.
 func StoreRefreshTokenInDB(logger *logrus.Logger, db *sql.DB, refreshToken string, userName string) (bool, error) {
 	query := "INSERT INTO USER_AUTH (user_id, refresh_token) VALUES ((SELECT id FROM USERS WHERE username = ?), ?) ON DUPLICATE KEY UPDATE refresh_token = ?"
-	result, err := db.Exec(query, userName, refreshToken)
+	result, err := db.Exec(query, userName, refreshToken, refreshToken)
 	if err != nil {
 		logger.WithError(err).WithField("username", userName).Error("Error storing refreshToken")
 		return false, err
