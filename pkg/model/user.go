@@ -5,7 +5,7 @@ import "time"
 type User struct {
 	ID             int       `json:"id"`
 	Username       string    `json:"username"`
-	Password       string    `json:"password"`        // The '-' tag means this field won't be included in JSON
+	Password       string    `json:"password"`
 	HashedPassword string    `json:"-"`               // The '-' tag means this field won't be included in JSON
 	Email          string    `json:"email,omitempty"` // omitempty will omit the field if it's empty
 	Country        string    `json:"country,omitempty"`
