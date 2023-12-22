@@ -50,7 +50,10 @@ func main() {
 
 	// Define routes here
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		handlers.LoginUser(logger, db, w, r)
+		handlers.LoginUser(logger, db, cfg, w, r)
+	})
+	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		handlers.LogoutUser(logger, db, w, r)
 	})
 	r.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		handlers.RegisterUser(logger, db, w, r)

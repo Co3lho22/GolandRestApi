@@ -17,9 +17,7 @@ import (
 func HashPassword(logger *logrus.Logger, user model.User) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"username": user.Username,
-		}).WithError(err).Error("Error adding user")
+		logger.WithField("username", user.Username).WithError(err).Error("Error hashing password")
 		return "", err
 	}
 	return string(bytes), nil

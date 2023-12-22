@@ -3,141 +3,79 @@ package service
 import (
 	"GolandRestApi/pkg/config"
 	"errors"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
-type Claims struct {
-	UserId int `json:"userId"`
-	jwt.StandardClaims
-}
-
-// TODO: Add method to check the refresh token
-
-// TODO: Add method to generate token
-
-func GenerateAccessToken(logger *logrus.Logger,
-	cfg *config.Config,
-	userId int,
-	username string,
-	roles []string,
-) (string, error) {
-
-	// Parse duration from config
-	expirationTime, err := time.ParseDuration(cfg.JWTExpirationTime)
+// CreateToken generates a JSON Web Token (JWT) with the provided username and expiration time.
+// It uses the secret key from the application configuration to sign the token. The expiration time
+// is specified as a duration string (e.g., "15m" for 15 minutes). Note: This function is used to
+// create the access and refresh token, just use the env variables for them.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// cfg: A pointer to the config.Config struct which contains the JWT secret key.
+// username: The username to be included in the JWT claims.
+// expirationTime: The duration for which the JWT will be valid.
+//
+// Returns the JWT token as a string and an error, if any. If there is an error during token creation,
+// it returns an empty string and the error.
+func CreateToken(logger *logrus.Logger, cfg *config.Config, username string, expirationTime string) (string, error) {
+	var secretKey = []byte(cfg.JWTSecretKey)
+	expirationDuration, err := time.ParseDuration(expirationTime)
 	if err != nil {
-		logger.WithError(err).Error("Invalid JWT expiration time format")
+		logger.WithField("username", username).
+			WithError(err).
+			Error("Invalid JWT expiration time format")
 		return "", err
 	}
 
-	claims := &Claims{
-		UserId: userId,
-		StandardClaims: jwt.StandardClaims{
-			Subject:   username,
-			ExpiresAt: time.Now().Add(expirationTime).Unix(),
-		},
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"username": username,
+			"exp":      time.Now().Add(expirationDuration).Unix(),
+		})
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	tokenString, err := token.SignedString([]byte(cfg.JWTSecretKey))
+	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
-		logger.Errorf("Failed to generate JWT token: %v", err)
+		logger.WithError(err).
+			WithField("username", username).
+			Error("Error creating the JWT token")
 		return "", err
 	}
 
-	logger.Infof("JWT token generated for user: %s", username)
+	logger.WithField("username", username).
+		Infof("JWT token generated")
 	return tokenString, nil
 }
 
-func GenerateRefreshToken(logger *logrus.Logger, cfg *config.Config, userId int, username string, roles []string) (string, error) {
-	refreshTokenValidity, err := time.ParseDuration(cfg.JWTRefreshTokenValidity)
-	if err != nil {
-		logger.WithError(err).Error("Invalid JWT refresh token validity format")
-		return "", err
-	}
-
-	claims := &Claims{
-		UserId: userId,
-		StandardClaims: jwt.StandardClaims{
-			Subject:   username,
-			ExpiresAt: time.Now().Add(refreshTokenValidity).Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	refreshToken, err := token.SignedString([]byte(cfg.JWTSecretKey))
-	if err != nil {
-		logger.Errorf("Failed to generate refresh token: %v", err)
-		return "", err
-	}
-
-	logger.Infof("Refresh token generated for user: %s", username)
-	return refreshToken, nil
-}
-
-// TODO: Add method to verify token
-func VerifyToken(logger *logrus.Logger, cfg *config.Config, tokenString string) (int, string, error) {
-	claims := &Claims{}
-
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(cfg.JWTSecretKey), nil
+// VerifyToken verifies the authenticity and validity of a JSON Web Token (JWT) using the provided secret key.
+// It checks if the token is correctly signed and has not expired.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// cfg: A pointer to the config.Config struct which contains the JWT secret key.
+// username: The username associated with the token (used for logging purposes).
+// tokenString: The JWT token to be verified.
+//
+// Returns an error if the token is invalid, expired, or if there's any error during verification.
+// Returns nil if the token is valid.
+func VerifyToken(logger *logrus.Logger, cfg *config.Config, username string, tokenString string) error {
+	var secretKey = []byte(cfg.JWTSecretKey)
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
 	})
-
 	if err != nil {
-		logger.WithError(err).Error("Error verifying JWT token")
-		return 0, "", err
+		logger.WithError(err).
+			WithField("username", username).
+			Error("Error parsing the token")
+		return err
 	}
 
 	if !token.Valid {
-		return 0, "", errors.New("invalid token")
+		logger.WithField("username", username).
+			Warnf("Invalid token: %s", tokenString)
+		return errors.New("invalid token")
 	}
 
-	logger.Infof("JWT token verified successfully for user: %s", claims.Subject)
-	return claims.UserId, claims.Subject, nil
-}
-
-func getUsernameFromToken(logger *logrus.Logger, cfg *config.Config, tokenString string) (string, error) {
-	claims := &jwt.StandardClaims{}
-
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(cfg.JWTSecretKey), nil
-	})
-
-	if err != nil {
-		logger.WithError(err).Error("Error verifying JWT token")
-		return "", err
-	}
-
-	if !token.Valid {
-		return "", errors.New("invalid token")
-	}
-
-	logger.Infof("JWT token verified successfully for user: %s", claims.Subject)
-	return claims.Subject, nil
-}
-
-func getUserIdFromToken(logger *logrus.Logger, cfg *config.Config, tokenString string) (int, error) {
-	claims := &jwt.MapClaims{}
-
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(cfg.JWTSecretKey), nil
-	})
-
-	if err != nil {
-		logger.WithError(err).Error("Error verifying JWT token")
-		return 0, err
-	}
-
-	if !token.Valid {
-		return 0, errors.New("invalid token")
-	}
-
-	userId, ok := (*claims)["userId"].(float64) // JWT numeric values are float64
-	if !ok {
-		return 0, errors.New("user ID not found in token")
-	}
-
-	logger.Infof("JWT token verified successfully for user ID: %d", int(userId))
-	return int(userId), nil
+	return nil
 }

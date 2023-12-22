@@ -34,7 +34,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 	userExists, err := repository.UserExists(logger, db, newUser.Username, newUser.Email)
 	if err != nil {
-		logger.WithError(err).Error("Error verifying if user exists")
 		http.Error(w, "Error while verifying if user exists", http.StatusInternalServerError)
 		return
 	} else if userExists == true {
@@ -44,7 +43,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 	hashedPassword, err := service.HashPassword(logger, newUser)
 	if err != nil {
-		logger.WithError(err).Error("Error adding user")
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
@@ -52,7 +50,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 	newUser.HashedPassword = hashedPassword
 	success, err := repository.AddUser(logger, db, newUser)
 	if err != nil {
-		logger.WithError(err).Error("Error adding user")
 		http.Error(w, "Error adding user", http.StatusInternalServerError)
 		return
 	}

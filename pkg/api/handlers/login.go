@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"GolandRestApi/pkg/config"
 	"GolandRestApi/pkg/model"
 	"GolandRestApi/pkg/repository"
 	"GolandRestApi/pkg/service"
@@ -11,21 +12,20 @@ import (
 	"net/http"
 )
 
-// LoginUser is an HTTP handler function for user login.
-// It takes a logrus.Logger instance for logging, a pointer to a sql.DB representing the database connection,
-// a http.ResponseWriter for writing the HTTP response, and an http.Request for processing the HTTP request.
-// This function expects a JSON-encoded structure containing the username and password in the request body.
-// It performs the following steps:
-// 1. Deserialize the username and password from the request body.
-// 2. Retrieve the user from the database by username.
-// 3. If the user doesn't exist or the password is invalid, return an appropriate error response.
-// 4. If the username and password are valid, respond with an HTTP status indicating successful login.
+// LoginUser handles user authentication by verifying the provided username and password.
+// Upon successful authentication, it generates and returns an access token and a refresh token.
 //
 // logger: A logrus.Logger instance for logging information, warnings, and errors.
-// db: A pointer to a sql.DB representing the database connection.
-// w: An http.ResponseWriter for writing the HTTP response.
-// r: An http.Request containing the HTTP request with JSON-encoded login details.
-func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
+// db: A pointer to the sql.DB instance representing the database connection.
+// cfg: A pointer to the config.Config struct which contains JWT configuration details.
+// w: The http.ResponseWriter to write the HTTP response.
+// r: The http.Request representing the HTTP request with user login details in JSON format.
+//
+// Responds with a JSON object containing the access token and refresh token upon successful login.
+// If login details are invalid, it returns an error response with an appropriate HTTP status code.
+func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
 
 	var loginDetails struct {
 		Username string `json:"username"`
@@ -43,29 +43,39 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http
 	newUser, err = repository.GetUserByUserName(logger, db, loginDetails.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			logger.WithField("username", loginDetails.Username).Warn("Invalid username or password")
 			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 			return
 		}
 
-		logger.WithError(err).
-			WithField("username", loginDetails.Username).
-			Error("Error retrieving user from DB")
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
 
 	newUser.Username = loginDetails.Username
-	if err := service.CheckPasswordHash(logger, newUser, loginDetails.Password); err != nil {
-		logger.
-			WithField("username", loginDetails.Username).
-			Warn("Invalid password")
+	err = service.CheckPasswordHash(logger, newUser, loginDetails.Password)
+	if err != nil {
 		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		return
 	}
 
-	responseMessage := "User successfully logged in"
+	var accessToken, refreshToken string
+	accessToken, refreshToken, err = handleTokenLogin(logger, db, cfg, loginDetails.Username)
+	if err != nil {
+		http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(responseMessage))
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		logger.WithError(err).Error("Error writing the response")
 		http.Error(w, "Error writing the response", http.StatusInternalServerError)
@@ -74,4 +84,38 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http
 
 	logger.WithField("username", loginDetails.Username).Info("User logged in with success")
 	return
+}
+
+// handleTokenLogin generates access and refresh tokens for the provided username
+// and stores the refresh token in the database.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the sql.DB instance representing the database connection.
+// cfg: A pointer to the config.Config struct which contains JWT configuration details.
+// userName: The username for which tokens should be generated.
+//
+// Returns the generated access token, refresh token, and an error if any.
+func handleTokenLogin(logger *logrus.Logger, db *sql.DB, cfg *config.Config, userName string) (string, string, error) {
+	var accessToken, refreshToken string
+	accessToken, err := service.CreateToken(logger, cfg, userName, cfg.JWTExpirationTime)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err = service.CreateToken(logger, cfg, userName, cfg.JWTExpirationTime)
+	if err != nil {
+		return "", "", err
+	}
+
+	var result bool
+	result, err = repository.StoreRefreshTokenInDB(logger, db, refreshToken, userName)
+	if err != nil {
+		return "", "", err
+	}
+
+	if !result {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }

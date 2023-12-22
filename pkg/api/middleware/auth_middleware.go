@@ -1,3 +1,4 @@
 package middleware
 
-// Here I will only check if the http request has the necessary values, like access token
+//TODO: Add the logic to obligate the access token in every request
+//unless the endpoint is /login, /register, /refreshToken
