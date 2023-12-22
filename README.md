@@ -1,6 +1,10 @@
 # GolangRestApi
 This is a general, but robust rest api in golang that can be used for future projects
 
+# DB structure 
+Use this script https://github.com/Co3lho22/basicRestAPIMariaDB to set up the DB that is supported by this rest server 
+and then build on it if needed.
+
 # Project Structure
 
 my-golang-api/
