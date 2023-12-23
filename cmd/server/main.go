@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GolandRestApi/pkg/api/handlers/middleware"
 	"GolandRestApi/pkg/api/handlers/token"
 	"GolandRestApi/pkg/api/handlers/user"
 	"GolandRestApi/pkg/config"
@@ -15,11 +16,6 @@ import (
 //TODO: 2. Use Middleware for Common Functionality
 // Middleware can be used for common functionalities like authentication, logging, and error handling.
 // This approach ensures that your handlers are focused on their primary responsibilities and not cluttered with repetitive code.
-
-//TODO: 3. Versioning Your API (add the version to the .env)
-// Consider versioning your API to manage changes and maintain backward compatibility.
-// For example, you can structure your endpoints like /api/v1/login, /api/v1/register, etc.
-// This approach allows you to introduce changes or new features without breaking existing clients.
 
 //TODO: 4. Error Handling
 // Standardize your error responses and create a utility function to handle errors.
@@ -72,6 +68,8 @@ func main() {
 			logger.WithError(err).Fatal("Could not close db")
 		}
 	}(db)
+
+	r.Use(middleware.Authenticate(logger, cfg))
 
 	// Routes
 	mainRoutFormatted := "/api/" + cfg.APIVersion
