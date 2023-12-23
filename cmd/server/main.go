@@ -95,9 +95,9 @@ func main() {
 	adminRoutes.HandleFunc("/addUser", func(w http.ResponseWriter, r *http.Request) {
 		admin.AddUser(logger, db, w, r)
 	}).Methods("POST")
-	//adminRoutes.HandleFunc("/removeUser/{userId}", func(w http.ResponseWriter, r *http.Request) {
-	//	handlers.RemoveUser(logger, db, w, r)
-	//}).Methods("DELETE")
+	adminRoutes.HandleFunc("/removeUser/{userId}", func(w http.ResponseWriter, r *http.Request) {
+		admin.RemoveUser(logger, db, w, r)
+	}).Methods("DELETE")
 
 	err = http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
 	if err != nil {

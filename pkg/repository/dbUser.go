@@ -144,3 +144,37 @@ func GetUserIdByUserName(logger *logrus.Logger, db *sql.DB, username string) (in
 	logger.WithField("userName", username).Info("Get userId by username with success")
 	return userId, nil
 }
+
+func DeleteUser(logger *logrus.Logger, db *sql.DB, userId int) error {
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		logger.WithError(err).WithField("userId", userId).Error("Error beginning the multiple queries")
+		return err
+	}
+
+	// Delete from USER_ROLE
+	if _, err := tx.Exec("DELETE FROM USER_ROLE WHERE user_id = ?", userId); err != nil {
+		logger.WithError(err).WithField("userId", userId).Error("Error executing the first query to remove a user")
+		tx.Rollback()
+		return err
+	}
+
+	// Delete from USER_AUTH
+	if _, err := tx.Exec("DELETE FROM USER_AUTH WHERE user_id = ?", userId); err != nil {
+		logger.WithError(err).WithField("userId", userId).Error("Error executing the second query to remove a user")
+		tx.Rollback()
+		return err
+	}
+
+	// Delete from USERS
+	if _, err := tx.Exec("DELETE FROM USERS WHERE id = ?", userId); err != nil {
+		logger.WithError(err).WithField("userId", userId).Error("Error executing the third query to remove a user")
+		tx.Rollback()
+		return err
+	}
+
+	// Commit the transaction
+	logger.WithField("userId", userId).Info("user removed successfully")
+	return tx.Commit()
+}
