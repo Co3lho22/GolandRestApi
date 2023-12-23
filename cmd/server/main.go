@@ -82,10 +82,10 @@ func main() {
 	userRoutes.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		user.LoginUser(logger, db, cfg, w, r)
 	}).Methods("POST")
-	userRoutes.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+	userRoutes.HandleFunc("/logout/{userId}", func(w http.ResponseWriter, r *http.Request) {
 		user.LogoutUser(logger, db, w, r)
 	}).Methods("GET")
-	userRoutes.HandleFunc("/register/{userId}", func(w http.ResponseWriter, r *http.Request) {
+	userRoutes.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		user.RegisterUser(logger, db, w, r)
 	}).Methods("POST")
 
