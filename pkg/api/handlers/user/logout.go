@@ -2,6 +2,8 @@ package user
 
 import (
 	"GolandRestApi/pkg/repository"
+	"GolandRestApi/pkg/service"
+	"GolandRestApi/pkg/utils"
 	"database/sql"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -25,29 +27,85 @@ import (
 func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userIdStr, ok := vars["userId"]
+
 	if !ok {
-		logger.Error("UserId not provided in the URL")
-		http.Error(w, "UserId not provided", http.StatusBadRequest)
+		//logger.Error("UserId not provided in the URL")
+		//http.Error(w, "UserId not provided", http.StatusBadRequest)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusBadRequest,
+			"/logout",
+			"UserId not provided",
+			nil,
+			utils.LogTypeWarn,
+			"not able to get the username")
 		return
 	}
 
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		logger.WithError(err).Error("Invalid userId format")
-		http.Error(w, "Invalid userId format", http.StatusBadRequest)
+		//logger.WithError(err).Error("Invalid userId format")
+		//http.Error(w, "Invalid userId format", http.StatusBadRequest)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusBadRequest,
+			"/logout",
+			"Invalid userId format",
+			err,
+			utils.LogTypeError,
+			"not able to get the username")
+		return
+	}
+
+	username, err := repository.GetUserNameByUserId(logger, db, userId)
+	if err != nil {
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/logout",
+			"Error getting userName by userId",
+			err,
+			utils.LogTypeError,
+			"with userId: "+strconv.Itoa(userId))
 		return
 	}
 
 	success, err := repository.TokenRevocation(logger, db, userId)
-	if err != nil || !success {
-		http.Error(w, "Error during logout", http.StatusInternalServerError)
+	if err != nil {
+		//http.Error(w, "Error during logout", http.StatusInternalServerError)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/logout",
+			"Error revoking token",
+			err,
+			utils.LogTypeError,
+			username)
+		return
+	} else if !success {
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/logout",
+			"Failed revoking token",
+			nil,
+			utils.LogTypeWarn,
+			username)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("Logged out successfully"))
 	if err != nil {
-		logger.WithError(err).WithField("userId", userId).Error("Error writing response")
+		//logger.WithError(err).WithField("userId", userId).Error("Error writing response")
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/logout",
+			"Error writing response",
+			err,
+			utils.LogTypeError,
+			username)
 		return
 	}
 

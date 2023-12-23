@@ -5,6 +5,7 @@ import (
 	"GolandRestApi/pkg/model"
 	"GolandRestApi/pkg/repository"
 	"GolandRestApi/pkg/service"
+	"GolandRestApi/pkg/utils"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -34,8 +35,16 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 
 	err := json.NewDecoder(r.Body).Decode(&loginDetails)
 	if err != nil {
-		logger.WithError(err).Error("Failed to deserialize the User object for the /login endpoint")
-		http.Error(w, "Invalid request format", http.StatusBadRequest)
+		// logger.WithError(err).Error("Failed to deserialize the User object for the /login endpoint")
+		// http.Error(w, "Invalid request format", http.StatusBadRequest)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusBadRequest,
+			"/login",
+			"Invalid request format",
+			err,
+			utils.LogTypeError,
+			"not able to get the username")
 		return
 	}
 
@@ -43,34 +52,83 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	newUser, err = repository.GetUserByUserName(logger, db, loginDetails.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.WithField("username", loginDetails.Username).Warn("Invalid username or password")
-			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			//logger.WithField("username", loginDetails.Username).Warn("Invalid username or password")
+			//http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			service.HttpErrorResponse(logger,
+				w,
+				http.StatusUnauthorized,
+				"/login",
+				"Invalid username or password",
+				nil,
+				utils.LogTypeWarn,
+				loginDetails.Username)
 			return
 		}
 
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		//http.Error(w, "Error creating user", http.StatusInternalServerError)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/login",
+			"Error creating user",
+			err,
+			utils.LogTypeError,
+			loginDetails.Username)
 		return
 	}
 
 	newUser.Username = loginDetails.Username
 	err = service.CheckPasswordHash(logger, newUser, loginDetails.Password)
 	if err != nil {
-		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		//http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusUnauthorized,
+			"/login",
+			"Invalid username or password",
+			nil,
+			utils.LogTypeWarn,
+			loginDetails.Username)
 		return
 	}
 
 	var accessToken, refreshToken string
 	accessToken, refreshToken, err = service.HandleTokensCreation(logger, db, cfg, loginDetails.Username)
 	if err != nil {
-		logger.WithError(err).Error("Error creating the token for the /login")
-		http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
+		//logger.WithError(err).Error("Error creating the token for the /login")
+		//http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/login",
+			"Server error handling the tokens",
+			err,
+			utils.LogTypeError,
+			loginDetails.Username)
 		return
 	}
 
 	var result bool
 	result, err = repository.StoreRefreshTokenInDB(logger, db, refreshToken, loginDetails.Username)
-	if err != nil || !result {
-		http.Error(w, "Server error storing refreshToken", http.StatusInternalServerError)
+	if err != nil {
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/login",
+			"Server error storing refreshToken",
+			err,
+			utils.LogTypeError,
+			loginDetails.Username)
+		return
+	} else if !result {
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/login",
+			"Server failed to storing refreshToken",
+			nil,
+			utils.LogTypeWarn,
+			loginDetails.Username)
 		return
 	}
 
@@ -85,8 +143,16 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		logger.WithError(err).Error("Error writing the response")
-		http.Error(w, "Error writing the response", http.StatusInternalServerError)
+		//logger.WithError(err).Error("Error writing the response")
+		//http.Error(w, "Error writing the response", http.StatusInternalServerError)
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/login",
+			"Error writing the response",
+			err,
+			utils.LogTypeError,
+			loginDetails.Username)
 		return
 	}
 

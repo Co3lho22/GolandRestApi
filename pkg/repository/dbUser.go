@@ -86,3 +86,28 @@ func GetUserByUserName(logger *logrus.Logger, db *sql.DB, username string) (*mod
 	logger.WithField("username", username).Info("Get user by username with success")
 	return &user, nil
 }
+
+// GetUserNameByUserId retrieves the username associated with a user ID from the database.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database instance.
+// userId: The ID of the user whose username needs to be retrieved.
+//
+// Returns the username associated with the given user ID.
+// Returns an error if the user is not found in the database or if there's any error during retrieval.
+func GetUserNameByUserId(logger *logrus.Logger, db *sql.DB, userId int) (string, error) {
+	query := `SELECT username FROM USERS WHERE id= ?`
+	var username string
+	err := db.QueryRow(query, userId).Scan(&username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.WithField("userId", userId).Info("User not found in DB")
+			return "", err
+		}
+		logger.WithError(err).WithField("userId", userId).Error("Error retrieving user from DB")
+		return "", err
+	}
+
+	logger.WithField("userId", userId).Info("Get user by username with success")
+	return username, nil
+}

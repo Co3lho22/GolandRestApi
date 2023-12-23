@@ -13,10 +13,6 @@ import (
 	"strconv"
 )
 
-//TODO: 2. Use Middleware for Common Functionality
-// Middleware can be used for common functionalities like authentication, logging, and error handling.
-// This approach ensures that your handlers are focused on their primary responsibilities and not cluttered with repetitive code.
-
 //TODO: 4. Error Handling
 // Standardize your error responses and create a utility function to handle errors.
 // This function can log the error and send a consistent error response to the client.
