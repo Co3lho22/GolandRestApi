@@ -1,7 +1,8 @@
 package main
 
 import (
-	"GolandRestApi/pkg/api/handlers"
+	"GolandRestApi/pkg/api/handlers/token"
+	"GolandRestApi/pkg/api/handlers/user"
 	"GolandRestApi/pkg/config"
 	"GolandRestApi/pkg/service"
 	"database/sql"
@@ -10,6 +11,30 @@ import (
 	"net/http"
 	"strconv"
 )
+
+//TODO: 2. Use Middleware for Common Functionality
+// Middleware can be used for common functionalities like authentication, logging, and error handling.
+// This approach ensures that your handlers are focused on their primary responsibilities and not cluttered with repetitive code.
+
+//TODO: 3. Versioning Your API (add the version to the .env)
+// Consider versioning your API to manage changes and maintain backward compatibility.
+// For example, you can structure your endpoints like /api/v1/login, /api/v1/register, etc.
+// This approach allows you to introduce changes or new features without breaking existing clients.
+
+//TODO: 4. Error Handling
+// Standardize your error responses and create a utility function to handle errors.
+// This function can log the error and send a consistent error response to the client.
+// This approach ensures consistency and reduces repetitive code.
+
+//TODO: 5. Testing
+// Write unit tests for your handlers and other critical parts of your application.
+// Testing ensures that your code works as expected and makes it safer to refactor or add new features in the future.
+
+//TODO: 6. Dockerfile Usage
+// The Dockerfile is used to containerize your application.
+// This means you can run your application in a Docker container, which packages your application and its environment.
+// This is useful for ensuring consistency across different environments and is beneficial for deployment and scaling,
+// especially when used with orchestration tools like Kubernetes.
 
 // main is the entry point of the GoLandRestApi application. It initializes and configures the HTTP server,
 // sets up database connection, and defines the API routes for login and user registration.
@@ -48,19 +73,36 @@ func main() {
 		}
 	}(db)
 
-	// Define routes here
-	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		handlers.LoginUser(logger, db, cfg, w, r)
-	})
-	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
-		handlers.LogoutUser(logger, db, w, r)
-	})
-	r.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		handlers.RegisterUser(logger, db, w, r)
-	})
-	r.HandleFunc("/refreshToken", func(w http.ResponseWriter, r *http.Request) {
-		handlers.RefreshToken(logger, db, w, r)
-	})
+	// Routes
+	mainRoutFormatted := "/api/" + cfg.APIVersion
+	mainRoute := r.PathPrefix(mainRoutFormatted).Subrouter()
+
+	// User routes
+	userRoutes := mainRoute.PathPrefix("/user").Subrouter()
+	userRoutes.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		user.LoginUser(logger, db, cfg, w, r)
+	}).Methods("POST")
+	userRoutes.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		user.LogoutUser(logger, db, w, r)
+	}).Methods("GET")
+	userRoutes.HandleFunc("/register/{userId}", func(w http.ResponseWriter, r *http.Request) {
+		user.RegisterUser(logger, db, w, r)
+	}).Methods("POST")
+
+	// Token routes
+	tokenRoutes := mainRoute.PathPrefix("/token").Subrouter()
+	tokenRoutes.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
+		token.Refresh(logger, db, cfg, w, r)
+	}).Methods("POST")
+
+	//// Admin routes
+	//adminRoutes := mainRoute.PathPrefix("/admin").Subrouter()
+	//adminRoutes.HandleFunc("/addUser", func(w http.ResponseWriter, r *http.Request) {
+	//	handlers.AddUser(logger, db, w, r)
+	//}).Methods("POST")
+	//adminRoutes.HandleFunc("/removeUser/{userId}", func(w http.ResponseWriter, r *http.Request) {
+	//	handlers.RemoveUser(logger, db, w, r)
+	//}).Methods("DELETE")
 
 	err = http.ListenAndServe(":"+strconv.Itoa(serverPort), r)
 	if err != nil {

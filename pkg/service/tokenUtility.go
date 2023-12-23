@@ -2,13 +2,15 @@ package service
 
 import (
 	"GolandRestApi/pkg/config"
+	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
-// CreateToken generates a JSON Web Token (JWT) with the provided username and expiration time.
+// createToken generates a JSON Web Token (JWT) with the provided username and expiration time.
 // It uses the secret key from the application configuration to sign the token. The expiration time
 // is specified as a duration string (e.g., "15m" for 15 minutes). Note: This function is used to
 // create the access and refresh token, just use the env variables for them.
@@ -20,7 +22,7 @@ import (
 //
 // Returns the JWT token as a string and an error, if any. If there is an error during token creation,
 // it returns an empty string and the error.
-func CreateToken(logger *logrus.Logger, cfg *config.Config, username string, expirationTime string) (string, error) {
+func createToken(logger *logrus.Logger, cfg *config.Config, username string, expirationTime string) (string, error) {
 	var secretKey = []byte(cfg.JWTSecretKey)
 	expirationDuration, err := time.ParseDuration(expirationTime)
 	if err != nil {
@@ -65,9 +67,7 @@ func VerifyToken(logger *logrus.Logger, cfg *config.Config, username string, tok
 		return secretKey, nil
 	})
 	if err != nil {
-		logger.WithError(err).
-			WithField("username", username).
-			Error("Error parsing the token")
+		logger.WithError(err).WithField("username", username).Error("Error parsing the token")
 		return err
 	}
 
@@ -78,4 +78,76 @@ func VerifyToken(logger *logrus.Logger, cfg *config.Config, username string, tok
 	}
 
 	return nil
+}
+
+// extractMapClaimsFromToken extracts the MapClaims from a JWT token without verifying its signature.
+// It parses the provided token string and retrieves the claims as a map.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// tokenString: The JWT token to be parsed.
+//
+// Returns a jwt.MapClaims containing the claims from the token, or an error if parsing fails.
+func extractMapClaimsFromToken(logger *logrus.Logger, tokenString string) (jwt.MapClaims, error) {
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		logger.WithError(err).WithField("token", tokenString).Error("Error parsing unverified token")
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		logger.WithField("token", tokenString).Warn("Unable to retrieve claims from token")
+		return nil, errors.New("invalid token claims")
+	}
+
+	logger.WithField("token", tokenString).Info("Token mapClaims retrieved successfully")
+	return claims, nil
+}
+
+// ExtractClaimsFromToken extracts the username and expiration (exp) claims from a JWT token.
+// It parses the provided token string, retrieves the claims, and returns them as strings.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// tokenString: The JWT token to be parsed.
+//
+// Returns the extracted username, expiration, and an error if extraction fails.
+func ExtractClaimsFromToken(logger *logrus.Logger, tokenString string) (string, string, error) {
+	mapClaims, err := extractMapClaimsFromToken(logger, tokenString)
+	if err != nil {
+		logger.WithError(err).WithField("token", tokenString).Error("Error extracting map claims from token")
+		return "", "", err
+	}
+
+	username := fmt.Sprint(mapClaims["username"])
+	exp := fmt.Sprint(mapClaims["exp"])
+	logger.WithFields(logrus.Fields{
+		"token":    tokenString,
+		"username": username,
+		"exp":      exp,
+	}).Info("Token claims retrieved successfully")
+	return username, exp, nil
+}
+
+// HandleTokensCreation generates and handles the creation of access and refresh tokens for a user.
+// It creates a new access token and refresh token for the specified username and stores the refresh token in the database.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database connection.
+// cfg: A pointer to the config.Config struct which contains JWT configuration.
+// userName: The username for which tokens are being generated.
+//
+// Returns the generated access token, refresh token, and an error if token creation or storage fails.
+func HandleTokensCreation(logger *logrus.Logger, db *sql.DB, cfg *config.Config, userName string) (string, string, error) {
+	var accessToken, refreshToken string
+	accessToken, err := createToken(logger, cfg, userName, cfg.JWTExpirationTime)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err = createToken(logger, cfg, userName, cfg.JWTExpirationTime)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }

@@ -4,6 +4,7 @@ package config
 type Config struct {
 	// Server Configuration
 	ServerPort int
+	APIVersion string
 
 	// Database Configuration
 	DBHost     string

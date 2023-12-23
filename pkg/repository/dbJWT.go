@@ -15,20 +15,20 @@ import (
 //
 // Returns the retrieved refresh token as a string and an error.
 // If the refresh token is not found, it returns an empty string and sql.ErrNoRows.
-func RetrieveRefreshTokenFromDB(logger *logrus.Logger, db *sql.DB, userId int) (string, error) {
-	query := "SELECT refresh_token FROM USER_AUTH WHERE user_id = ?"
+func RetrieveRefreshTokenFromDB(logger *logrus.Logger, db *sql.DB, userName string) (string, error) {
+	query := "SELECT refresh_token FROM USER_AUTH WHERE user_id = (SELECT id FROM USERS WHERE username = ?)"
 	var refreshToken string
-	err := db.QueryRow(query, userId).Scan(&refreshToken)
+	err := db.QueryRow(query, userName).Scan(&refreshToken)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.WithField("userId", userId).Info("Refresh token for this user not found in DB")
+			logger.WithField("userName", userName).Info("Refresh token for this user not found in DB")
 			return "", err
 		}
-		logger.WithError(err).WithField("userId", userId).Error("Error retrieving refreshToken from DB")
+		logger.WithError(err).WithField("userName", userName).Error("Error retrieving refreshToken from DB")
 		return "", err
 	}
 
-	logger.WithField("userId", userId).Info("RefreshToken retrieve with success")
+	logger.WithField("userName", userName).Info("RefreshToken retrieve with success")
 	return refreshToken, err
 }
 

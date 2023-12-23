@@ -31,6 +31,7 @@ func NewConfig() *Config {
 	return &Config{
 		// Server Configuration
 		ServerPort: serverPort,
+		APIVersion: os.Getenv("API_VERSION"),
 
 		// Database Configuration
 		DBHost:     os.Getenv("DB_HOST"),

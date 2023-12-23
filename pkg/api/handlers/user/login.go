@@ -1,4 +1,4 @@
-package handlers
+package user
 
 import (
 	"GolandRestApi/pkg/config"
@@ -60,8 +60,9 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	}
 
 	var accessToken, refreshToken string
-	accessToken, refreshToken, err = handleTokenLogin(logger, db, cfg, loginDetails.Username)
+	accessToken, refreshToken, err = service.HandleTokensCreation(logger, db, cfg, loginDetails.Username)
 	if err != nil {
+		logger.WithError(err).Error("Error creating the token for the /login")
 		http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
 		return
 	}
@@ -84,38 +85,4 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 
 	logger.WithField("username", loginDetails.Username).Info("User logged in with success")
 	return
-}
-
-// handleTokenLogin generates access and refresh tokens for the provided username
-// and stores the refresh token in the database.
-//
-// logger: A logrus.Logger instance for logging information, warnings, and errors.
-// db: A pointer to the sql.DB instance representing the database connection.
-// cfg: A pointer to the config.Config struct which contains JWT configuration details.
-// userName: The username for which tokens should be generated.
-//
-// Returns the generated access token, refresh token, and an error if any.
-func handleTokenLogin(logger *logrus.Logger, db *sql.DB, cfg *config.Config, userName string) (string, string, error) {
-	var accessToken, refreshToken string
-	accessToken, err := service.CreateToken(logger, cfg, userName, cfg.JWTExpirationTime)
-	if err != nil {
-		return "", "", err
-	}
-
-	refreshToken, err = service.CreateToken(logger, cfg, userName, cfg.JWTExpirationTime)
-	if err != nil {
-		return "", "", err
-	}
-
-	var result bool
-	result, err = repository.StoreRefreshTokenInDB(logger, db, refreshToken, userName)
-	if err != nil {
-		return "", "", err
-	}
-
-	if !result {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
 }
