@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"GolandRestApi/pkg/config"
+	"GolandRestApi/pkg/repository"
 	"GolandRestApi/pkg/service"
 	"GolandRestApi/pkg/utils"
+	"database/sql"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
@@ -17,7 +19,7 @@ import (
 // cfg: A pointer to the config.Config struct that contains the API version and other configuration details.
 //
 // Returns a http.Handler that performs authentication checks before passing control to the next handler.
-func Authenticate(logger *logrus.Logger, cfg *config.Config) func(http.Handler) http.Handler {
+func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip middleware for specific endpoints
@@ -88,7 +90,54 @@ func Authenticate(logger *logrus.Logger, cfg *config.Config) func(http.Handler) 
 				return
 			}
 
-			// Token is valid, proceed to the next handler
+			// Admin routes
+			if r.URL.Path == "/api/"+cfg.APIVersion+"/admin/addUser" ||
+				r.URL.Path == "/api/"+cfg.APIVersion+"/admin/removeUser/{userId}" {
+				//TODO: check if the user has the role admin assign to him
+				userId, err := repository.GetUserIdByUserName(logger, db, username)
+				if err != nil {
+					service.HttpErrorResponse(logger,
+						w,
+						http.StatusInternalServerError,
+						"/api/"+cfg.APIVersion,
+						"Server error getting userId",
+						err,
+						utils.LogTypeError,
+						username)
+					return
+				}
+
+				userRoles, err := repository.GetUserRolesByUserId(logger, db, userId)
+				if err != nil {
+					service.HttpErrorResponse(logger,
+						w,
+						http.StatusInternalServerError,
+						"/api/"+cfg.APIVersion,
+						"Server error getting user roles",
+						err,
+						utils.LogTypeError,
+						username)
+					return
+				}
+
+				for _, role := range userRoles {
+					if role == "admin" {
+						next.ServeHTTP(w, r)
+						return
+					}
+				}
+
+				service.HttpErrorResponse(logger,
+					w,
+					http.StatusForbidden,
+					"/api/"+cfg.APIVersion,
+					"Access denied",
+					nil,
+					utils.LogTypeWarn,
+					username)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}

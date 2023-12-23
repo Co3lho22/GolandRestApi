@@ -65,7 +65,7 @@ func main() {
 		}
 	}(db)
 
-	r.Use(middleware.Authenticate(logger, cfg))
+	r.Use(middleware.Authenticate(logger, db, cfg))
 
 	// Routes
 	mainRoutFormatted := "/api/" + cfg.APIVersion

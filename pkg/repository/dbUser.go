@@ -101,13 +101,30 @@ func GetUserNameByUserId(logger *logrus.Logger, db *sql.DB, userId int) (string,
 	err := db.QueryRow(query, userId).Scan(&username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			logger.WithField("userId", userId).Info("User not found in DB")
+			logger.WithField("userId", userId).Info("Username not found in DB")
 			return "", err
 		}
-		logger.WithError(err).WithField("userId", userId).Error("Error retrieving user from DB")
+		logger.WithError(err).WithField("userId", userId).Error("Error retrieving username from DB")
 		return "", err
 	}
 
-	logger.WithField("userId", userId).Info("Get user by username with success")
+	logger.WithField("userId", userId).Info("Get username by userId with success")
 	return username, nil
+}
+
+func GetUserIdByUserName(logger *logrus.Logger, db *sql.DB, username string) (int, error) {
+	query := `SELECT id FROM USERS WHERE username= ?`
+	var userId int
+	err := db.QueryRow(query, userId).Scan(&userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logger.WithField("userName", username).Info("UserId not found in DB")
+			return -1, err
+		}
+		logger.WithError(err).WithField("userName", username).Error("Error retrieving userId from DB")
+		return -1, err
+	}
+
+	logger.WithField("userName", username).Info("Get userId by username with success")
+	return userId, nil
 }
