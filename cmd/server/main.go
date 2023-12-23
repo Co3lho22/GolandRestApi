@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GolandRestApi/pkg/api/handlers/admin"
 	"GolandRestApi/pkg/api/handlers/middleware"
 	"GolandRestApi/pkg/api/handlers/token"
 	"GolandRestApi/pkg/api/handlers/user"
@@ -90,10 +91,10 @@ func main() {
 	}).Methods("POST")
 
 	//// Admin routes
-	//adminRoutes := mainRoute.PathPrefix("/admin").Subrouter()
-	//adminRoutes.HandleFunc("/addUser", func(w http.ResponseWriter, r *http.Request) {
-	//	handlers.AddUser(logger, db, w, r)
-	//}).Methods("POST")
+	adminRoutes := mainRoute.PathPrefix("/admin").Subrouter()
+	adminRoutes.HandleFunc("/addUser", func(w http.ResponseWriter, r *http.Request) {
+		admin.AddUser(logger, db, w, r)
+	}).Methods("POST")
 	//adminRoutes.HandleFunc("/removeUser/{userId}", func(w http.ResponseWriter, r *http.Request) {
 	//	handlers.RemoveUser(logger, db, w, r)
 	//}).Methods("DELETE")

@@ -121,7 +121,7 @@ func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(ht
 				}
 
 				for _, role := range userRoles {
-					if role == "admin" {
+					if role == utils.AdminRole {
 						next.ServeHTTP(w, r)
 						return
 					}

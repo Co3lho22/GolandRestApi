@@ -81,7 +81,7 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 	}
 
 	newUser.HashedPassword = hashedPassword
-	success, err := repository.AddUser(logger, db, newUser)
+	err = repository.AddUser(logger, db, newUser, utils.UserRole)
 	if err != nil {
 		//http.Error(w, "Error adding user", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
@@ -91,17 +91,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 			"Error adding user",
 			err,
 			utils.LogTypeError,
-			newUser.Username)
-		return
-	} else if !success {
-		//http.Error(w, "Error while registering user", http.StatusInternalServerError)
-		service.HttpErrorResponse(logger,
-			w,
-			http.StatusInternalServerError,
-			"/register",
-			"Error while registering user",
-			nil,
-			utils.LogTypeWarn,
 			newUser.Username)
 		return
 	}

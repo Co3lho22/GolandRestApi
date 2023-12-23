@@ -4,6 +4,7 @@ import (
 	"GolandRestApi/pkg/model"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +30,7 @@ func UserExists(logger *logrus.Logger, db *sql.DB, username string, email string
 	return count >= 1, nil
 }
 
-// AddUser adds a new user to the database with the provided user information.
+// AddUserWithoutRole adds a new user to the database with the provided user information.
 //
 // logger: A logrus.Logger instance for logging information, warnings, and errors.
 // db: A pointer to the sql.DB instance representing the database connection.
@@ -37,27 +38,42 @@ func UserExists(logger *logrus.Logger, db *sql.DB, username string, email string
 //
 // Returns true if the user is successfully added to the database, false otherwise.
 // Returns an error if there is an issue with the database query.
-func AddUser(logger *logrus.Logger, db *sql.DB, user model.User) (bool, error) {
+func addUserWithoutRole(logger *logrus.Logger, db *sql.DB, user model.User) error {
 	query := `INSERT INTO USERS (username, hashed_password, email, country, phone) VALUES (?, ?, ?, ?, ?)`
 	result, err := db.Exec(query, user.Username, user.HashedPassword, user.Email, user.Country, user.Phone)
 	if err != nil {
-		logger.WithError(err).WithField("username", user.Username).Error("Error adding user")
-		return false, err
+		logger.WithError(err).WithField("username", user.Username).Error("Error adding user without roles")
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		logger.WithError(err).WithField("username", user.Username).Error("Error getting rows affected")
-		return false, err
+		return err
 	}
 
 	if !(rowsAffected > 0) {
 		logger.WithField("username", user.Username).Warn("No errors adding user, but no rows affected")
-		return false, nil
+		return fmt.Errorf("no errors adding user %s, but no rows affected", user.Username)
+	}
+
+	logger.WithField("username", user.Username).Info("Add user without roles with success")
+	return nil
+}
+
+func AddUser(logger *logrus.Logger, db *sql.DB, user model.User, roleName string) error {
+	err := addUserWithoutRole(logger, db, user)
+	if err != nil {
+		return err
+	}
+
+	err = SetUserRole(logger, db, user.Username, roleName)
+	if err != nil {
+		return err
 	}
 
 	logger.WithField("username", user.Username).Info("Add user with success")
-	return true, nil
+	return nil
 }
 
 // GetUserByUserName retrieves user information from the database based on the provided username.

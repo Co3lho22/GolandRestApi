@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,4 +30,31 @@ func GetUserRolesByUserId(logger *logrus.Logger, db *sql.DB, userId int) ([]stri
 
 	logger.WithField("userId", userId).Info("Roles retrieved successfully using the userId")
 	return roles, nil
+}
+
+func SetUserRole(logger *logrus.Logger, db *sql.DB, userName string, roleName string) error {
+
+	query := "INSERT INTO USER_ROLE (user_id, role_id) VALUES ((SELECT id FROM USERS WHERE username= ?),(SELECT id FROM ROLE WHERE name= ?))"
+	result, err := db.Exec(query, userName, roleName)
+	if err != nil {
+		logger.WithError(err).WithField("username", userName).Error("Error setting user role for user")
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		logger.WithError(err).WithField("username", userName).
+			Error("Error getting the number of rows affected when trying to store the refreshToken")
+		return err
+	}
+
+	if !(rowsAffected > 0) {
+		logger.WithError(err).WithField("username", userName).
+			Warn("No errors setting up the userRole in DB, but rows affected <= 0")
+		return fmt.Errorf("no errors setting user role %s for username %s, but no rows affected", roleName, userName)
+	}
+
+	logger.WithField("username", userName).Info("Roles for user set up with success")
+	return nil
+
 }
