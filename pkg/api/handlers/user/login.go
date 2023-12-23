@@ -67,6 +67,13 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 		return
 	}
 
+	var result bool
+	result, err = repository.StoreRefreshTokenInDB(logger, db, refreshToken, loginDetails.Username)
+	if err != nil || !result {
+		http.Error(w, "Server error storing refreshToken", http.StatusInternalServerError)
+		return
+	}
+
 	response := struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
