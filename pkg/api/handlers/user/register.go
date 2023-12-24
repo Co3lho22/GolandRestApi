@@ -95,16 +95,21 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 		return
 	}
 
+	message := "User successfully created"
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte("User successfully created"))
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		//logger.WithError(err).Error("Error writing the response")
-		//http.Error(w, "Error writing the response", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
-			"/register",
-			"Error writing response",
+			"/user/register",
+			"Error writing the response",
 			err,
 			utils.LogTypeError,
 			newUser.Username)

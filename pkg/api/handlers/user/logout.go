@@ -5,6 +5,7 @@ import (
 	"GolandRestApi/pkg/service"
 	"GolandRestApi/pkg/utils"
 	"database/sql"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -103,6 +104,27 @@ func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 			http.StatusInternalServerError,
 			"/logout",
 			"Error writing response",
+			err,
+			utils.LogTypeError,
+			username)
+		return
+	}
+
+	message := "Logged out successfully"
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		service.HttpErrorResponse(logger,
+			w,
+			http.StatusInternalServerError,
+			"/user/logout",
+			"Error writing the response",
 			err,
 			utils.LogTypeError,
 			username)
