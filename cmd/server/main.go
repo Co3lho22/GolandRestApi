@@ -14,15 +14,6 @@ import (
 	"strconv"
 )
 
-//TODO: 4. Error Handling
-// Standardize your error responses and create a utility function to handle errors.
-// This function can log the error and send a consistent error response to the client.
-// This approach ensures consistency and reduces repetitive code.
-
-//TODO: 5. Testing
-// Write unit tests for your handlers and other critical parts of your application.
-// Testing ensures that your code works as expected and makes it safer to refactor or add new features in the future.
-
 //TODO: 6. Dockerfile Usage
 // The Dockerfile is used to containerize your application.
 // This means you can run your application in a Docker container, which packages your application and its environment.

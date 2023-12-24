@@ -12,11 +12,23 @@ import (
 	"strconv"
 )
 
+// RemoveUser handles the removal of a user by an administrator.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database connection.
+// w: The http.ResponseWriter to write the response to.
+// r: The HTTP request containing the user ID as a path variable.
+//
+// This function retrieves the user ID from the request, validates it, and attempts to delete the user from the database.
+// It performs the following steps:
+// 1. Parse the user ID from the path variable.
+// 2. Retrieve the username associated with the user ID from the database.
+// 3. Check if the user exists; if not, return a not found response.
+// 4. Attempt to delete the user from the database.
+// 5. Send a success response if the user is successfully removed or an error response if any issues occur.
+//
+// Note: This function deletes records from multiple database tables (USERS, USER_AUTH, USER_ROLE) associated with the user.
 func RemoveUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	//TODO: what i need to remove?
-	// 1. USERS
-	// 2. USER_AUTH
-	// 3. USER_ROLE
 	vars := mux.Vars(r)
 	userIdStr, ok := vars["userId"]
 	if !ok {

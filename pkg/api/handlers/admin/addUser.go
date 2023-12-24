@@ -11,6 +11,17 @@ import (
 	"net/http"
 )
 
+// AddUser handles the creation of a new user by an administrator.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database connection.
+// w: The http.ResponseWriter to write the response to.
+// r: The HTTP request containing user and role information in JSON format.
+//
+// This function expects a JSON request body with user details (model.User) and a roleName.
+// It first validates the request format and checks if the provided username and email are unique.
+// If the user details are valid and unique, the function hashes the password, creates the user with the specified role,
+// and sends a success response. If any error occurs during the process, an appropriate error response is sent.
 func AddUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

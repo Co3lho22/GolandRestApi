@@ -30,14 +30,14 @@ func UserExists(logger *logrus.Logger, db *sql.DB, username string, email string
 	return count >= 1, nil
 }
 
-// AddUserWithoutRole adds a new user to the database with the provided user information.
+// addUserWithoutRole adds a new user to the database with the provided user information and without assigning a role.
 //
 // logger: A logrus.Logger instance for logging information, warnings, and errors.
 // db: A pointer to the sql.DB instance representing the database connection.
 // user: A model.User struct containing the user information to be added.
 //
-// Returns true if the user is successfully added to the database, false otherwise.
-// Returns an error if there is an issue with the database query.
+// Returns an error if there is any issue while adding the user.
+// If successful, the user is added to the database without errors.
 func addUserWithoutRole(logger *logrus.Logger, db *sql.DB, user model.User) error {
 	query := `INSERT INTO USERS (username, hashed_password, email, country, phone) VALUES (?, ?, ?, ?, ?)`
 	result, err := db.Exec(query, user.Username, user.HashedPassword, user.Email, user.Country, user.Phone)
@@ -61,6 +61,15 @@ func addUserWithoutRole(logger *logrus.Logger, db *sql.DB, user model.User) erro
 	return nil
 }
 
+// AddUser adds a new user to the database with the provided user information and assigns a specified role.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the sql.DB instance representing the database connection.
+// user: A model.User struct containing the user information to be added.
+// roleName: The name of the role to be assigned to the user.
+//
+// Returns an error if there is any issue while adding the user or setting the role.
+// If successful, the user is added to the database with the specified role without errors.
 func AddUser(logger *logrus.Logger, db *sql.DB, user model.User, roleName string) error {
 	err := addUserWithoutRole(logger, db, user)
 	if err != nil {
@@ -128,6 +137,14 @@ func GetUserNameByUserId(logger *logrus.Logger, db *sql.DB, userId int) (string,
 	return username, nil
 }
 
+// GetUserIdByUserName retrieves the user ID associated with a username from the database.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database instance.
+// username: The username for which the user ID needs to be retrieved.
+//
+// Returns the user ID associated with the given username.
+// Returns -1 and an error if the user is not found in the database or if there's any error during retrieval.
 func GetUserIdByUserName(logger *logrus.Logger, db *sql.DB, username string) (int, error) {
 	query := `SELECT id FROM USERS WHERE username= ?`
 	var userId int
@@ -145,36 +162,39 @@ func GetUserIdByUserName(logger *logrus.Logger, db *sql.DB, username string) (in
 	return userId, nil
 }
 
+// DeleteUser removes a user and associated records from the database based on the user ID.
+//
+// logger: A logrus.Logger instance for logging information, warnings, and errors.
+// db: A pointer to the SQL database instance.
+// userId: The ID of the user to be removed.
+//
+// Returns an error if there is any issue while deleting the user or associated records.
+// If successful, the user and associated records are removed from the database without errors.
 func DeleteUser(logger *logrus.Logger, db *sql.DB, userId int) error {
-	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {
 		logger.WithError(err).WithField("userId", userId).Error("Error beginning the multiple queries")
 		return err
 	}
 
-	// Delete from USER_ROLE
 	if _, err := tx.Exec("DELETE FROM USER_ROLE WHERE user_id = ?", userId); err != nil {
 		logger.WithError(err).WithField("userId", userId).Error("Error executing the first query to remove a user")
 		tx.Rollback()
 		return err
 	}
 
-	// Delete from USER_AUTH
 	if _, err := tx.Exec("DELETE FROM USER_AUTH WHERE user_id = ?", userId); err != nil {
 		logger.WithError(err).WithField("userId", userId).Error("Error executing the second query to remove a user")
 		tx.Rollback()
 		return err
 	}
 
-	// Delete from USERS
 	if _, err := tx.Exec("DELETE FROM USERS WHERE id = ?", userId); err != nil {
 		logger.WithError(err).WithField("userId", userId).Error("Error executing the third query to remove a user")
 		tx.Rollback()
 		return err
 	}
 
-	// Commit the transaction
 	logger.WithField("userId", userId).Info("user removed successfully")
 	return tx.Commit()
 }
