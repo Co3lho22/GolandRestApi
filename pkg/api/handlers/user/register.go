@@ -28,8 +28,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 	var newUser model.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		//logger.WithError(err).Error("Failed to deserialize the User object for the /register endpoint")
-		//http.Error(w, "Invalid request format", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -43,7 +41,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 	userExists, err := repository.UserExists(logger, db, newUser.Username, newUser.Email)
 	if err != nil {
-		//http.Error(w, "Error while verifying if user exists", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -54,7 +51,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 			newUser.Username)
 		return
 	} else if userExists == true {
-		//http.Error(w, "Username or Email already in use", http.StatusMethodNotAllowed)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusMethodNotAllowed,
@@ -68,7 +64,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 
 	hashedPassword, err := service.HashPassword(logger, newUser)
 	if err != nil {
-		//http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -83,7 +78,6 @@ func RegisterUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *h
 	newUser.HashedPassword = hashedPassword
 	err = repository.AddUser(logger, db, newUser, utils.UserRole)
 	if err != nil {
-		//http.Error(w, "Error adding user", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,

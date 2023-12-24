@@ -35,8 +35,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 
 	err := json.NewDecoder(r.Body).Decode(&loginDetails)
 	if err != nil {
-		// logger.WithError(err).Error("Failed to deserialize the User object for the /login endpoint")
-		// http.Error(w, "Invalid request format", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -52,8 +50,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	newUser, err = repository.GetUserByUserName(logger, db, loginDetails.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			//logger.WithField("username", loginDetails.Username).Warn("Invalid username or password")
-			//http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 			service.HttpErrorResponse(logger,
 				w,
 				http.StatusUnauthorized,
@@ -65,7 +61,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 			return
 		}
 
-		//http.Error(w, "Error creating user", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -80,7 +75,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	newUser.Username = loginDetails.Username
 	err = service.CheckPasswordHash(logger, newUser, loginDetails.Password)
 	if err != nil {
-		//http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusUnauthorized,
@@ -95,8 +89,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	var accessToken, refreshToken string
 	accessToken, refreshToken, err = service.HandleTokensCreation(logger, db, cfg, loginDetails.Username)
 	if err != nil {
-		//logger.WithError(err).Error("Error creating the token for the /login")
-		//http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -143,8 +135,6 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		//logger.WithError(err).Error("Error writing the response")
-		//http.Error(w, "Error writing the response", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,

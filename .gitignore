@@ -67,3 +67,6 @@ Thumbs.db
 
 # Logs records
 var/
+
+# Compiled file
+GolandRestApi

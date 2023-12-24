@@ -30,8 +30,6 @@ func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 	userIdStr, ok := vars["userId"]
 
 	if !ok {
-		//logger.Error("UserId not provided in the URL")
-		//http.Error(w, "UserId not provided", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -45,8 +43,6 @@ func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		//logger.WithError(err).Error("Invalid userId format")
-		//http.Error(w, "Invalid userId format", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -73,7 +69,6 @@ func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 
 	success, err := repository.TokenRevocation(logger, db, userId)
 	if err != nil {
-		//http.Error(w, "Error during logout", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -98,7 +93,6 @@ func LogoutUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("Logged out successfully"))
 	if err != nil {
-		//logger.WithError(err).WithField("userId", userId).Error("Error writing response")
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,

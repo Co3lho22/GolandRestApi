@@ -53,7 +53,9 @@ Example Response (json):
     HTTP/1.1 200 OK
     Content-Type: application/json
 
-    "Registration Successful"
+    {
+    "message": "User successfully created"
+    }
 
 ## Refresh Token
 
@@ -97,14 +99,14 @@ Example Request:
     Content-Type: application/json
 
     {
-    "username": "test22",
-    "password": "test22",
-    "email": "newuser@example.com",
-    "country": "CountryName",
-    "phone": "123456789",
-    "role": {
-                "name": "user"
-            }
+    "user": {
+        "username": "test3",
+        "password": "test3",
+        "email": "test3@example.com",
+        "country": "CountryName",
+        "phone": "123456789"
+        },
+    "roleName": "user"
     }
 
 Example Response:
@@ -112,7 +114,9 @@ Example Response:
     HTTP/1.1 200 OK
     Content-Type: application/json
     
-    "User added successfull"
+    {
+    "message": "User successfully created"
+    }
 
 ## Remove User
 
@@ -130,4 +134,6 @@ Example Response:
     HTTP/1.1 200 OK
     Content-Type: application/json
     
-    "User removed successfully"
+    {
+    "message": "User successfully removed"
+    }

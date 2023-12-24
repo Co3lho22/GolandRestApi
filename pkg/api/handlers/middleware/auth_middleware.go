@@ -22,7 +22,6 @@ import (
 func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Skip middleware for specific endpoints
 			if r.URL.Path == "/api/"+cfg.APIVersion+"/user/login" ||
 				r.URL.Path == "/api/"+cfg.APIVersion+"/user/register" ||
 				r.URL.Path == "/api/"+cfg.APIVersion+"/token/refresh" {
@@ -33,7 +32,6 @@ func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(ht
 			// Extract token from the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				//http.Error(w, "Authorization header is required", http.StatusUnauthorized)
 				service.HttpErrorResponse(logger,
 					w,
 					http.StatusUnauthorized,
@@ -47,7 +45,6 @@ func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(ht
 
 			bearerToken := strings.Split(authHeader, " ")
 			if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
-				//http.Error(w, "Invalid token format", http.StatusUnauthorized)
 				service.HttpErrorResponse(logger,
 					w,
 					http.StatusUnauthorized,
@@ -64,7 +61,6 @@ func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(ht
 			// Verify token
 			username, _, err := service.ExtractClaimsFromToken(logger, tokenString)
 			if err != nil {
-				//http.Error(w, "Invalid token", http.StatusUnauthorized)
 				service.HttpErrorResponse(logger,
 					w,
 					http.StatusUnauthorized,
@@ -78,7 +74,6 @@ func Authenticate(logger *logrus.Logger, db *sql.DB, cfg *config.Config) func(ht
 
 			err = service.VerifyToken(logger, cfg, username, tokenString)
 			if err != nil {
-				//http.Error(w, "Invalid token", http.StatusUnauthorized)
 				service.HttpErrorResponse(logger,
 					w,
 					http.StatusUnauthorized,

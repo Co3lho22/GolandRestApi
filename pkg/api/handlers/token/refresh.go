@@ -34,8 +34,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 
 	err := json.NewDecoder(r.Body).Decode(&refreshDetails)
 	if err != nil {
-		//logger.WithError(err).Error("Failed to deserialize the User object for the /refresh endpoint")
-		//http.Error(w, "Invalid request format", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -63,7 +61,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 
 	err = service.VerifyToken(logger, cfg, userName, refreshDetails.RefreshToken)
 	if err != nil {
-		//http.Error(w, "Invalid token", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -77,7 +74,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 
 	dbRefreshToken, err := repository.RetrieveRefreshTokenFromDB(logger, db, userName)
 	if err != nil {
-		//http.Error(w, "Server error retrieving refreshToken from DB", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -90,7 +86,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 	}
 
 	if dbRefreshToken != refreshDetails.RefreshToken {
-		//http.Error(w, "Invalid token", http.StatusBadRequest)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusBadRequest,
@@ -105,8 +100,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 	var newAccessToken, newRefreshToken string
 	newAccessToken, newRefreshToken, err = service.HandleTokensCreation(logger, db, cfg, userName)
 	if err != nil {
-		//logger.WithError(err).Error("Error creating the token for the /refresh")
-		//http.Error(w, "Server error handling the tokens", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
@@ -154,8 +147,6 @@ func Refresh(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Respo
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		//logger.WithError(err).Error("Error writing the response")
-		//http.Error(w, "Error writing the response", http.StatusInternalServerError)
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
