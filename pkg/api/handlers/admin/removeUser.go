@@ -5,6 +5,7 @@ import (
 	"GolandRestApi/pkg/service"
 	"GolandRestApi/pkg/utils"
 	"database/sql"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -78,14 +79,21 @@ func RemoveUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *htt
 		return
 	}
 
+	message := "User successfully removed"
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte("User successfully removed"))
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
 			"/admin/removeUser",
-			"Error writing response",
+			"Error writing the response",
 			err,
 			utils.LogTypeError,
 			username)

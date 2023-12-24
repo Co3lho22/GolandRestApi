@@ -82,14 +82,21 @@ func AddUser(logger *logrus.Logger, db *sql.DB, w http.ResponseWriter, r *http.R
 		return
 	}
 
+	message := "User successfully created"
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: message,
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte("User successfully created"))
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		service.HttpErrorResponse(logger,
 			w,
 			http.StatusInternalServerError,
-			"/admin/adduser",
-			"Error writing response",
+			"/admin/addUser",
+			"Error writing the response",
 			err,
 			utils.LogTypeError,
 			AddUserDetails.User.Username)
