@@ -21,11 +21,28 @@ func GetPermissionsByRoleId(logger *logrus.Logger, db *sql.DB, roleId int) ([]st
 
 func GetUserRolesByUserId(logger *logrus.Logger, db *sql.DB, userId int) ([]string, error) {
 	var roles []string
-	query := "SELECT r.* FROM ROLE r INNER JOIN USER_ROLE ur ON r.id = ur.role_id WHERE ur.user_id = ?"
-	err := db.QueryRow(query, userId).Scan(&roles)
+	query := "SELECT r.name FROM ROLE r INNER JOIN USER_ROLE ur ON r.id = ur.role_id WHERE ur.user_id = ?"
+
+	rows, err := db.Query(query, userId)
 	if err != nil {
-		logger.WithError(err).WithField("userId", userId).Error("Error retrieving permissions using roleId")
-		return roles, err
+		logger.WithError(err).WithField("userId", userId).Error("Error retrieving roles using userId")
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			logger.WithError(err).WithField("userId", userId).Error("Error scanning role")
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		logger.WithError(err).WithField("userId", userId).Error("Error iterating over roles")
+		return nil, err
 	}
 
 	logger.WithField("userId", userId).Info("Roles retrieved successfully using the userId")
