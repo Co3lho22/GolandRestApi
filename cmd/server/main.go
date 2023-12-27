@@ -41,7 +41,7 @@ func main() {
 			log.Fatalf("Could not initialize logger: %v", err)
 		}
 	}
-
+        
 	r := mux.NewRouter()
 
 	logger.Info("Http server started on port ", serverPort, ".")

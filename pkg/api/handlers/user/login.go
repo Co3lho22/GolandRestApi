@@ -149,3 +149,5 @@ func LoginUser(logger *logrus.Logger, db *sql.DB, cfg *config.Config, w http.Res
 	logger.WithField("username", loginDetails.Username).Info("User logged in with success")
 	return
 }
+
+
