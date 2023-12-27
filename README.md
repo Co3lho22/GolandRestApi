@@ -59,6 +59,12 @@ The API includes the following endpoints:
     /api/v1/admin/addUser: Add a new user (Admin only)
     /api/v1/admin/removeUser/{userId}: Remove a user (Admin only)
 
+## Containerization (Work in Progress)
+
+I'm currently working on containerizing the GolangRestApi using Docker and Docker Compose. This will involve setting up separate containers for the REST API server and the MariaDB database, and managing them with a docker-compose.yml file. This update aims to simplify deployment and ensure consistency across different environments.
+
+Stay tuned for updates on this feature!
+
 ## Contributing
 
 Contributions to improve GolangRestApi are welcome. Please feel free to submit pull requests or open issues to discuss proposed changes or enhancements.
