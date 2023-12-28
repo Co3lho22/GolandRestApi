@@ -92,6 +92,44 @@ Replace **`<username>`**, **`<password>`**, **`<email>`**, **`<refreshToken>`**,
 
 The application is containerized using Docker and managed with Docker Compose. This setup includes separate containers for the REST API server and the MariaDB database. The docker-compose.yml file simplifies deployment and ensures consistency across different environments.
 
+## Docker Image Options
+
+The `Dockerfile` in the repository is set up to support two different build strategies for the Docker image:
+
+1. **Full Code Image:**
+   * This build includes all the source code along with the compiled binary. It's useful for environments where you might want to inspect or modify the source code within the container.   
+   * The relevant section of the `Dockerfile` for this build is:
+   
+      ```bash
+      # Build stage
+      FROM golang:1.21.5-alpine3.19 AS builder
+      
+      WORKDIR /restApi
+      
+      COPY go.mod go.sum ./
+      RUN go mod download
+      COPY . .
+      RUN go build -o GolandRestApi ./cmd/server
+      
+      # Final stage - all the code
+      EXPOSE 8080
+      CMD ["./GolandRestApi"]
+      ```
+2. **Executable-Only Image:**
+   * This build includes only the compiled executable in a minimal Alpine Linux environment. It's a lightweight option, ideal for production deployments where you don't need the source code.
+   * To use this build, uncomment the following lines in the `Dockerfile`:
+       
+       ```bash
+       # Final stage - only with the executable
+       FROM alpine:3.19.0
+   
+       WORKDIR /root/
+       COPY --from=builder /restApi/GolandRestApi .
+       EXPOSE 8080
+       CMD ["./GolandRestApi"]
+       ```
+Choose the build strategy that best fits your deployment needs. The full code image is recommended for development environments, while the executable-only image is more suited for production deployments.
+
 ## Interacting with Containers
 1. **Accessing the MariaDB Container:**
    * To access the MariaDB database, use the following command:
