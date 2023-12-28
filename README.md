@@ -172,7 +172,6 @@ Choose the build strategy that best fits your deployment needs. The full code im
 
 ## Current Work-in-Progress and TODOs
 
-* **Update Config to Use Docker Environment Variables:** Modify the application to directly use environment variables set in docker-compose.yml.
 * **Volume for Logs:** Consider mounting the log directory (var) as a volume for persistent log storage.
 * **Implement Docker Secrets:** Update the application to use Docker secrets for sensitive data instead of relying on .env files.
 

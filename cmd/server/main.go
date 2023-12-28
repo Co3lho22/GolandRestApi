@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-// TODO: Update .config to use the environment var from docker-compose.yml
-// The environment variables set in docker-compose.yml are not being used by your application.
-// Change the code to use environment variables directly
-
 // TODO: Volume for the logs
 // Log Directory (var): Depending on how logging is set up, you might not need to include this in the container.
 // If logs are written to this directory, consider mounting it as a volume instead.

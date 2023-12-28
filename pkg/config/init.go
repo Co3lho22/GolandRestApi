@@ -1,51 +1,53 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
 
-// NewConfig creates a new Config instance by loading configuration values from environment variables.
-// It reads environment variables for various configuration parameters, converts them to their respective types,
-// and initializes the Config struct accordingly.
+// NewConfig creates a new configuration instance for the application based on environment variables.
+// It reads various environment variables to configure the application, such as database settings,
+// server settings, and JWT token settings. If any of the required environment variables are not set
+// or have invalid values, it will log a fatal error and terminate the application.
 //
-// The following environment variables are used:
-// - SERVER_PORT: The port on which the HTTP server should listen.
-// - DB_HOST: The hostname or IP address of the MySQL database server.
-// - DB_PORT: The port on which the MySQL database server is running.
-// - DB_USER: The username used to authenticate with the MySQL database server.
-// - DB_PASSWORD: The password used to authenticate with the MySQL database server.
-// - DB_NAME: The name of the MySQL database to connect to.
-// - LOG_DIR: The directory where log files should be stored.
-// - JWT_SECRET_KEY: The secret key used for JWT token signing and verification.
-// - JWT_EXPIRATION_TIME: The duration of JWT token validity (e.g., "15m" for 15 minutes).
-// - JWT_REFRESH_TOKEN_VALIDITY: The duration of JWT refresh token validity (e.g., "7d" for 7 days).
-//
-// Returns a pointer to a Config struct initialized with the loaded configuration values.
+// Returns a pointer to a Config struct containing the configuration parameters for the application.
 func NewConfig() *Config {
-	LoadEnv()
+	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
+	if err != nil {
+		log.Fatalf("DB_PORT environment variable is not set or invalid")
+	}
 
-	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT")) // Convert port to int
-	serverPort, _ := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	serverPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	if err != nil {
+		log.Fatalf("SERVER_PORT environment variable is not set or invalid")
+	}
 
 	return &Config{
-		// Server Configuration
-		ServerPort: serverPort,
-		APIVersion: os.Getenv("API_VERSION"),
-
-		// Database Configuration
-		DBHost:     os.Getenv("DB_HOST"),
-		DBPort:     dbPort,
-		DBUser:     os.Getenv("DB_USER"),
-		DBPassword: os.Getenv("DB_PASSWORD"),
-		DBName:     os.Getenv("DB_NAME"),
-
-		// Logging Configuration
-		LogDir: os.Getenv("LOG_DIR"),
-
-		// JWT Configuration
-		JWTSecretKey:            os.Getenv("JWT_SECRET_KEY"),
-		JWTExpirationTime:       os.Getenv("JWT_EXPIRATION_TIME"),
-		JWTRefreshTokenValidity: os.Getenv("JWT_REFRESH_TOKEN_VALIDITY"),
+		ServerPort:              serverPort,
+		APIVersion:              getEnv("API_VERSION", "v1"),
+		DBHost:                  getEnv("DB_HOST", "localhost"),
+		DBPort:                  dbPort,
+		DBUser:                  getEnv("DB_USER", "defaultUser"),
+		DBPassword:              getEnv("DB_PASSWORD", ""),
+		DBName:                  getEnv("DB_NAME", "RestApi"),
+		LogDir:                  getEnv("LOG_DIR", "/var/log/restapi/"),
+		JWTSecretKey:            getEnv("JWT_SECRET_KEY", "defaultSecret"),
+		JWTExpirationTime:       getEnv("JWT_EXPIRATION_TIME", "15m"),
+		JWTRefreshTokenValidity: getEnv("JWT_REFRESH_TOKEN_VALIDITY", "7d"),
 	}
+}
+
+// getEnv retrieves the value of an environment variable specified by the 'key' parameter.
+// If the environment variable is not set, it returns the 'fallback' value.
+//
+// key: The name of the environment variable to retrieve.
+// fallback: The default value to return if the environment variable is not set.
+//
+// Returns a string representing the value of the environment variable or the fallback value.
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
 }
