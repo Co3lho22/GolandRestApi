@@ -88,7 +88,7 @@ Replace **`<username>`**, **`<password>`**, **`<email>`**, **`<refreshToken>`**,
 
 **Note:** you might need to adapt the url endpoint depending on your .env file configuration.
 
-## Containerization (Work in Progress)
+## Containerization
 
 The application is containerized using Docker and managed with Docker Compose. This setup includes separate containers for the REST API server and the MariaDB database. The docker-compose.yml file simplifies deployment and ensures consistency across different environments.
 
