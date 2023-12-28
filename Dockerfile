@@ -1,32 +1,28 @@
-# Use an official Golang runtime as a parent image
-FROM golang:1.21.5-bullseye
+# Build stage
+FROM golang:1.21.5-alpine3.19 AS builder
 
-# Set the working directory inside the container
 WORKDIR /restApi
 
-# Copy the Go Modules manifests and download the dependencies
 COPY go.mod go.sum ./
+
 RUN go mod download
 
-# Copy the rest of the source code
 COPY . .
 
-# Build the application
 RUN go build -o GolandRestApi ./cmd/server
 
-# Expose the port the app runs on
+# Final stage - all the code
 EXPOSE 8080
 
-# Command to run the executable
 CMD ["./GolandRestApi"]
 
-# Commands
-
-# Build Image
-# docker build -t golandrestapi .
-
-# View a summary of image vulnerabilities and recommendations
-# docker scout quickview
-
-# Run the image in a container
-# docker run -d -p 8080:8080 --env-file .env golandrestapi # So the variables inside the .env file are used in the container
+# Final stage - only with the executable
+#FROM alpine:3.19.0
+#
+#WORKDIR /root/
+#
+#COPY --from=builder /app/GolandRestApi .
+#
+#EXPOSE 8080
+#
+#CMD ["./GolandRestApi"]

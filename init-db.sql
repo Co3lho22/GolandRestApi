@@ -2,6 +2,7 @@ CREATE DATABASE IF NOT EXISTS RestApi;
 
 USE RestApi;
 
+# Add the default tables
 CREATE TABLE USERS (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     username VARCHAR(255) NOT NULL,
@@ -45,6 +46,7 @@ CREATE TABLE USER_ROLE (
                     FOREIGN KEY (role_id) REFERENCES ROLE(id)
 );
 
+# Add default roles config
 INSERT INTO ROLE (name) VALUES ('admin'), ('user');
 
 INSERT INTO PERMISSION (name) VALUES ('read'), ('write'), ('delete');
@@ -52,3 +54,8 @@ INSERT INTO PERMISSION (name) VALUES ('read'), ('write'), ('delete');
 INSERT INTO ROLE_PERMISSION (role_id, permission_id) VALUES (1, 1), (1, 2), (1, 3);
 
 INSERT INTO ROLE_PERMISSION (role_id, permission_id) VALUES (2, 1);
+
+# Add admin default account
+INSERT INTO USERS (username, hashed_password, email, country, phone) VALUES ('admin', '$2a$10$H7POZPYUzJS15D2/XSq7f.QHsyZBeMetjZa6W8Yffbhz1vhmGLG9C', 'admin@example.com', 'Admin Country', '1234567890');
+
+INSERT INTO USER_ROLE (user_id, role_id) VALUES (1, 1);

@@ -12,13 +12,18 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
-//TODO: 6. Dockerfile Usage
-// The Dockerfile is used to containerize your application.
-// This means you can run your application in a Docker container, which packages your application and its environment.
-// This is useful for ensuring consistency across different environments and is beneficial for deployment and scaling,
-// especially when used with orchestration tools like Kubernetes.
+// TODO: Update .config to use the environment var from docker-compose.yml
+// The environment variables set in docker-compose.yml are not being used by your application.
+// Change the code to use environment variables directly
+
+// TODO: Volume for the logs
+// Log Directory (var): Depending on how logging is set up, you might not need to include this in the container.
+// If logs are written to this directory, consider mounting it as a volume instead.
+
+// TODO: Update the code to use Docker secrets instead of .env
 
 // main is the entry point of the GoLandRestApi application. It initializes and configures the HTTP server,
 // sets up database connection, and defines the API routes for login and user registration.
@@ -32,6 +37,7 @@ func main() {
 	cfg := config.NewConfig()
 	serverPort := cfg.ServerPort
 
+	// Logger Initialization
 	logger, err := service.NewLogger(cfg)
 
 	if err != nil {
@@ -41,15 +47,21 @@ func main() {
 			log.Fatalf("Could not initialize logger: %v", err)
 		}
 	}
-        
-	r := mux.NewRouter()
 
 	logger.Info("Http server started on port ", serverPort, ".")
 
-	db, err := service.NewDBConnection(logger, cfg)
-	if err != nil {
-		logger.WithError(err).Warn("Could not connect to the database")
+	// DB Initialization
+	var db *sql.DB
+	for i := 0; i < 10; i++ {
+		db, err = service.NewDBConnection(logger, cfg)
+		if err == nil {
+			break
+		}
+
+		logger.WithError(err).WithField("attempt", i).Warn("Could not connect to the database")
+		time.Sleep(2 * time.Second)
 	}
+
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
@@ -57,9 +69,9 @@ func main() {
 		}
 	}(db)
 
-	r.Use(middleware.Authenticate(logger, db, cfg))
-
 	// Routes
+	r := mux.NewRouter()
+	r.Use(middleware.Authenticate(logger, db, cfg))
 	mainRoutFormatted := "/api/" + cfg.APIVersion
 	mainRoute := r.PathPrefix(mainRoutFormatted).Subrouter()
 
